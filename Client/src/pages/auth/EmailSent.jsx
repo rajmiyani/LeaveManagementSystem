@@ -5,6 +5,7 @@ export default function EmailSent() {
         <div
             style={{
                 minHeight: "100vh",
+                minWidth: "100vw",
                 background: "linear-gradient(to right, #f6f1fc, #e5d9f2)",
                 display: "flex",
                 alignItems: "center",

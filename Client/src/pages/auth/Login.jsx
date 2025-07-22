@@ -5,7 +5,7 @@ import { loginUser } from "../../services/api";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function Login() {
-    const [form, setForm] = useState({ email: "", password: "" });
+    const [form, setForm] = useState({ email: "", password: "", mobile: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [selectedRole, setSelectedRole] = useState("admin");
     const [role, setRole] = useState('admin');
@@ -58,13 +58,14 @@ export default function Login() {
         <div
             style={{
                 minHeight: "100%",
+                minWidth: "100vw",
                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
                 background: "linear-gradient(135deg, #ede3f7, #e4d7f4)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "2rem",
+                // padding: "2rem",
                 fontFamily: "'Segoe UI', sans-serif",
             }}
         >
@@ -85,7 +86,8 @@ export default function Login() {
                     borderRadius: "1.5rem",
                     padding: "2.5rem",
                     width: "100%",
-                    maxWidth: "800px",
+                    maxWidth: "500px",
+                    marginBottom: "20px"
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -149,11 +151,32 @@ export default function Login() {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-3 mt-5">
-                        <label
-                            className="form-label fw-semibold"
-                            style={{ textAlign: "left", display: "block" }}
-                        >
+                    {/* Conditionally render Mobile Number field */}
+                    {role === "employee" && (
+                        <div className="mb-3 mt-4">
+                            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
+                                Mobile Number :
+                            </label>
+                            <div className="input-group">
+                                <span className="input-group-text bg-white">
+                                    <i className="bi bi-phone" />
+                                </span>
+                                <input
+                                    type="tel"
+                                    name="mobile"
+                                    className="form-control"
+                                    placeholder="Enter mobile number"
+                                    required
+                                    value={form.mobile}
+                                    onChange={handleChange}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Email */}
+                    <div className="mb-3 mt-4">
+                        <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
                             Email Address :
                         </label>
                         <div className="input-group">
@@ -172,11 +195,9 @@ export default function Login() {
                         </div>
                     </div>
 
+                    {/* Password */}
                     <div className="mb-3">
-                        <label
-                            className="form-label fw-semibold"
-                            style={{ textAlign: "left", display: "block" }}
-                        >
+                        <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
                             Password :
                         </label>
                         <div className="input-group">
@@ -202,13 +223,10 @@ export default function Login() {
                         </div>
                     </div>
 
+                    {/* Remember Me & Forgot Password */}
                     <div className="d-flex justify-content-between mb-3">
                         <div className="form-check">
-                            <input
-                                type="checkbox"
-                                className="form-check-input"
-                                id="rememberMe"
-                            />
+                            <input type="checkbox" className="form-check-input" id="rememberMe" />
                             <label htmlFor="rememberMe" className="form-check-label">
                                 Remember Me
                             </label>
@@ -222,14 +240,13 @@ export default function Login() {
                         </Link>
                     </div>
 
+                    {/* Login Button */}
                     <button
                         type="submit"
                         className="btn w-100 login-btn border text-white"
                         style={{
                             backgroundColor: "#5e148b",
-                            color: "#fff",
                             fontWeight: "bold",
-                            width: "100%",
                             marginTop: "2rem",
                             padding: "12px",
                             border: "none",

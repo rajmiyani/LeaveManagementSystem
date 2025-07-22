@@ -46,6 +46,7 @@ export default function OtpVerification() {
     <div
       style={{
         minHeight: "100vh",
+        minWidth: "100vw",
         background: "linear-gradient(135deg, #ede3f7, #e4d7f4)",
         display: "flex",
         flexDirection: "column",

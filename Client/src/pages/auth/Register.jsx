@@ -6,6 +6,7 @@ export default function Register() {
     const [form, setForm] = useState({
         name: "",
         email: "",
+        mobile: "",
         password: "",
         confirmPassword: "",
     });
@@ -31,6 +32,7 @@ export default function Register() {
             const payload = {
                 name: form.name,
                 email: form.email,
+                mobile: form.mobile,
                 password: form.password,
                 role: selectedRole,
             };
@@ -50,6 +52,7 @@ export default function Register() {
         <div
             style={{
                 minHeight: "100vh",
+                minWidth: "100vw",
                 background: "linear-gradient(135deg, #ede3f7, #e4d7f4)",
                 display: "flex",
                 flexDirection: "column",
@@ -76,7 +79,7 @@ export default function Register() {
                     borderRadius: "1.5rem",
                     padding: "2.5rem",
                     width: "100%",
-                    maxWidth: "800px",
+                    maxWidth: "500px",
                 }}
             >
                 <h5 className="text-center fw-bold">Create Account</h5>
@@ -140,6 +143,21 @@ export default function Register() {
                             placeholder="Enter email address"
                             required
                             value={form.email}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
+                            Mobile Number :
+                        </label>
+                        <input
+                            type="tel"
+                            name="mobile"
+                            className="form-control"
+                            placeholder="Enter mobile number"
+                            required
+                            value={form.mobile}
                             onChange={handleChange}
                         />
                     </div>
