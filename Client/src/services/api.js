@@ -1,28 +1,34 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: 'http://localhost:8000'
+  baseURL: "http://localhost:8080", // Or your deployed API URL
 });
 
-// Login API call
-export const loginUser = (data) => API.post("/auth/login", data);
+// Auth APIs
+export const loginUser = (data) => API.post("/api/login", data);
 
-// Register API call
-export const registerUser = (data) => API.post("/auth/register", data);
+export const registerUser = (data) => {
+  let endpoint = "/api/register"; // fallback
 
+  if (data.role === "admin") endpoint = "/api/register-admin";
+  else if (data.role === "manager") endpoint = "/api/register-manager";
+  else if (data.role === "employee") endpoint = "/api/register-employee";
 
-export const sendOtpToEmail = async (email) => {
-    try {
-        const response = await fetch("/api/send-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-        });
-
-        if (!response.ok) throw new Error("Failed to send OTP");
-        return await response.json();
-    } catch (error) {
-        console.error("OTP error:", error);
-        throw error;
-    }
+  return API.post(endpoint, data);
 };
+
+export const verifyEmployeeOtp = (data) => API.post("/api/verify-employee-otp", data);
+export const forgotPassword = (data) => API.post("/api/forgot-password", data);
+export const resetPassword = (data) => API.post("/api/reset-password", data);
+
+
+
+// export const sendOtpToEmail = async (email) => {
+//   try {
+//     const response = await API.post("/api/send-otp", { email }); // ensure backend supports this
+//     return response.data;
+//   } catch (error) {
+//     console.error("OTP error:", error);
+//     throw error;
+//   }
+// };

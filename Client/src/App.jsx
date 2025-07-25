@@ -31,13 +31,14 @@ import LeaveHistory from './pages/admin/LeaveHistory';
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerProfile from './pages/manager/Profile';
 import LeavesList from './pages/manager/LeaveList';
-import ApplyLeave from './pages/manager/Applyleave';
+// import ApplyLeave from './pages/manager/ApplyLeave';
+import Applyleave from './pages/manager/Applyleave';
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/Dashboard';
 import EmployeeProfile from './pages/employee/Profile';
 import EmployeeLeaveList from './pages/employee/LeaveHistory';
-import EmployeeApplyLeave from './pages/employee/Applyleave';
+import EmployeeApplyLeave from './pages/employee/ApplyLeave';
 
 // Logout
 import LogoutPage from './components/Logout';
@@ -78,7 +79,7 @@ function App() {
         <Route path="show-all-leave" element={<ManageAllLeave />} />
         <Route path="show-all-leave/:id" element={<LeaveDetails />} />
         <Route path="leaves-history" element={<LeaveHistory />} />
-        <Route path="apply-leave" element={<ApplyLeave />} />
+        <Route path="apply-leave" element={<Applyleave />} />
         <Route path="leave-list" element={<LeavesList />} />
       </Route>
 

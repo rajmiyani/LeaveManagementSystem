@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-export default function ApplyLeave() {
+export default function Applyleave() {
     const [formData, setFormData] = useState({
         name: "",
         mobile: "",
