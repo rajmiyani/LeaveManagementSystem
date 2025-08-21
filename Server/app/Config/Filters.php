@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Filters\CORS;
 use CodeIgniter\Config\BaseConfig;
 use CodeIgniter\Filters\CSRF;
 use CodeIgniter\Filters\DebugToolbar;
@@ -19,11 +20,14 @@ class Filters extends BaseConfig
      *                                                     or [filter_name => [classname1, classname2, ...]]
      */
     public array $aliases = [
-        'cors' => \App\Filters\Cors::class,
-        'csrf' => \CodeIgniter\Filters\CSRF::class,
+        'csrf'          => CSRF::class,
+        'toolbar'       => DebugToolbar::class,
         'honeypot'      => Honeypot::class,
         'invalidchars'  => InvalidChars::class,
         'secureheaders' => SecureHeaders::class,
+        'jwt' => \App\Filters\JwtAuth::class,
+        // 'cors'         => \App\Filters\CORS::class,
+        'cors'         => CORS::class,
     ];
 
     /**
@@ -34,12 +38,13 @@ class Filters extends BaseConfig
      */
     public array $globals = [
         'before' => [
+            'cors', 
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',
-            'cors',
         ],
         'after' => [
+            // 'cors',
             'toolbar',
             // 'honeypot',
             // 'secureheaders',
@@ -50,13 +55,6 @@ class Filters extends BaseConfig
      * List of filter aliases that works on a
      * particular HTTP method (GET, POST, etc.).
      *
-     * Example:
-     * 'post' => ['foo', 'bar']
-     *
-     * If you use this, you should disable auto-routing because auto-routing
-     * permits any HTTP method to access a controller. Accessing the controller
-     * with a method you don't expect could bypass the filter.
-     *
      * @var array<string, list<string>>
      */
     public array $methods = [];
@@ -64,9 +62,6 @@ class Filters extends BaseConfig
     /**
      * List of filter aliases that should run on any
      * before or after URI patterns.
-     *
-     * Example:
-     * 'isLoggedIn' => ['before' => ['account/*', 'profiles/*']]
      *
      * @var array<string, array<string, list<string>>>
      */

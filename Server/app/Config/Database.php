@@ -74,7 +74,7 @@ class Database extends Config
         'foreignKeys' => true,
         'busyTimeout' => 1000,
     ];
-
+ 
     public function __construct()
     {
         parent::__construct();
