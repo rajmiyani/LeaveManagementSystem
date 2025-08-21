@@ -1,11 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function AddLeaves() {
     const [formData, setFormData] = useState({
         leaveType: '',
         description: '',
+        addedBy: localStorage.getItem('username') || 'Admin',
         status: 'Active',
     });
+    const [leaveTypes, setLeaveTypes] = useState([]);
+
+    // Fetch all leave types
+    useEffect(() => {
+        fetch("http://localhost:8080/admin/leavetype")
+            .then(res => res.json())
+            .then(data => setLeaveTypes(data))
+            .catch(() => toast.error("Failed to fetch leave types"));
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -16,22 +28,28 @@ export default function AddLeaves() {
         e.preventDefault();
 
         if (!formData.leaveType.trim()) {
-            alert("Leave type is required.");
+            toast.error("Leave type is required");
             return;
         }
 
-        console.log("Submitted Leave:", formData);
+        const formPayload = new FormData();
+        Object.entries(formData).forEach(([key, value]) => formPayload.append(key, value));
 
-        // Reset form
-        setFormData({
-            leaveType: '',
-            description: '',
-            status: 'Active',
-        });
+        fetch("http://localhost:8080/admin/leavetype", {
+            method: "POST",
+            body: formPayload
+        })
+            .then(res => res.json())
+            .then(data => {
+                toast.success(data.message || "Leave type added successfully");
+                setLeaveTypes(prev => [...prev, { ...formData, id: data.id || Date.now() }]);
+                setFormData({ leaveType: '', description: '', status: 'Active' });
+            })
+            .catch(() => toast.error("Failed to add leave type"));
     };
 
     return (
-        <div style={{marginTop:"-150px"}}>
+        <div style={{marginTop:"-150px"}}> 
             {/* Header */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h4 className="mb-0" style={{ color: "#5e148b", fontWeight: "600" }}>Add Leave Type</h4>
@@ -53,7 +71,7 @@ export default function AddLeaves() {
                 <form onSubmit={handleSubmit}>
                     <div className="row g-3 mb-4">
                         <div className="col-md-6">
-                            <label className="form-label" style={{ display: "block", textAlign: "left" }}>
+                            <label className="form-label" style={{ textAlign: "left" }}>
                                 Leave Type <span className="text-danger">*</span>
                             </label>
                             <input
@@ -68,7 +86,7 @@ export default function AddLeaves() {
                         </div>
 
                         <div className="col-md-6">
-                            <label className="form-label" style={{ display: "block", textAlign: "left" }}>
+                            <label className="form-label" style={{ textAlign: "left" }}>
                                 Status <span className="text-danger">*</span>
                             </label>
                             <select
@@ -83,7 +101,7 @@ export default function AddLeaves() {
                         </div>
 
                         <div className="col-md-12">
-                            <label className="form-label" style={{ display: "block", textAlign: "left" }}>
+                            <label className="form-label" style={{ textAlign: "left" }}>
                                 Description
                             </label>
                             <textarea
@@ -105,19 +123,19 @@ export default function AddLeaves() {
                         </button>
                     </div>
                 </form>
-
-                <style>
-                    {`
-                        .custom-input:focus {
-                            border: 2px solid #5e148b !important;
-                            box-shadow: none !important;
-                        }
-                        .custom-input {
-                            margin-top: 15px;
-                        }
-                    `}
-                </style>
             </div>
+
+            <style>
+                {`
+                    .custom-input:focus {
+                        border: 2px solid #5e148b !important;
+                        box-shadow: none !important;
+                    }
+                    .custom-input {
+                        margin-top: 15px;
+                    }
+                `}
+            </style>
         </div>
     );
 }

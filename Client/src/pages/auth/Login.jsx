@@ -1,19 +1,23 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { loginUser } from "../../services/api";
+import { loginUser, sendOtpToEmail } from "../../services/api"; // Make sure sendOtpToEmail is imported
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 export default function Login() {
     const [form, setForm] = useState({ email: "", password: "", mobile: "" });
     const [showPassword, setShowPassword] = useState(false);
-    const [selectedRole, setSelectedRole] = useState("admin");
-    const [role, setRole] = useState('admin');
+    const [role, setRole] = useState("admin");
     const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleToggle = (selectedRole) => {
         setRole(selectedRole);
+        if (selectedRole !== "employee") {
+            setForm((prev) => ({ ...prev, mobile: "" }));
+        }
     };
 
     const handleChange = (e) => {
@@ -26,33 +30,71 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (role === "employee" && !form.mobile) {
+            toast.error("Mobile number is required for employee login.");
+            return;
+        }
+
         try {
-            const res = await loginUser(form);
+            const payload = {
+                email: form.email,
+                password: form.password,
+                role: role,
+            };
 
-            // Store user info with selected role
-            login({ ...res.data.user, role });
+            const res = await loginUser(payload);
 
-            if (role === "employee") {
-                // 🔐 Send OTP email (you need to have this API endpoint)
-                await sendOtpToEmail(res.data.user.email); // implement this function/API
-                navigate("/OTPVerification"); // redirect to OTP page
-            } else if (role === "admin") {
-                navigate("/admin/dashboard");
-            } else if (role === "manager") {
-                navigate("/manager/dashboard");
+            if (!res.data.status) {
+                toast.error(res.data.message || "Login failed.");
+                return;
             }
+
+            // ✅ Store token in localStorage in array of objects format
+            if (res.data.token) {
+                let tokens = JSON.parse(localStorage.getItem("userTokens")) || [];
+
+                // Check if this role already exists in the array
+                const existingIndex = tokens.findIndex((t) => t.role === role);
+
+                const tokenData = {
+                    role: role,
+                    token: res.data.token,
+                    user: res.data.user || { email: form.email }
+                };
+
+                if (existingIndex !== -1) {
+                    tokens[existingIndex] = tokenData; // update existing role
+                } else {
+                    tokens.push(tokenData); // add new
+                }
+
+                localStorage.setItem("userTokens", JSON.stringify(tokens));
+            }
+
+            if (role === "employee" && res.data.step === "otp") {
+                login({ id: res.data.id, email: res.data.email, role });
+                toast.success(res.data.message);
+                navigate("/login-otp-verification", {
+                    state: { email: form.email }
+                });
+            } else {
+                login({ ...res.data.user, role });
+
+                toast.success(res.data.message);
+                if (role === "admin") navigate("/admin/dashboard");
+                else if (role === "manager") navigate("/manager/dashboard");
+                else navigate("/employee/dashboard");
+            }
+
         } catch (err) {
-            alert("Login failed");
+            const msg =
+                err.response?.data?.message ||
+                "Login failed. Please check your credentials and try again.";
+            toast.error(msg);
         }
     };
 
-    const roleButtonStyle = (role) => ({
-        flex: 1,
-        border: "1px solid #5e148b",
-        backgroundColor: selectedRole === role ? "#5e148b" : "transparent",
-        color: selectedRole === role ? "#fff" : "#5e148b",
-        fontWeight: "bold",
-    });
 
     return (
         <div
@@ -65,10 +107,12 @@ export default function Login() {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                // padding: "2rem",
                 fontFamily: "'Segoe UI', sans-serif",
+                padding: "2rem",
             }}
         >
+            <ToastContainer position="top-right" autoClose={3000} />
+
             <h1
                 style={{
                     fontFamily: "'Pacifico', cursive",
@@ -87,74 +131,51 @@ export default function Login() {
                     padding: "2.5rem",
                     width: "100%",
                     maxWidth: "500px",
-                    marginBottom: "20px"
+                    marginBottom: "20px",
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label style={{ fontWeight: 'bold', fontSize: '18px', color: '#1a1a3d' }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <label
+                        style={{ fontWeight: "bold", fontSize: "18px", color: "#1a1a3d" }}
+                    >
                         Log In as
                     </label>
-
                     <div
                         style={{
-                            display: 'flex',
-                            border: '1px solid #ccc',
-                            borderRadius: '6px',
-                            overflow: 'hidden',
+                            display: "flex",
+                            border: "1px solid #ccc",
+                            borderRadius: "6px",
+                            overflow: "hidden",
                         }}
                     >
-                        <button
-                            onClick={() => handleToggle('admin')}
-                            style={{
-                                padding: '6px 16px',
-                                border: 'none',
-                                backgroundColor: role === 'admin' ? '#5e148b' : '#fff',
-                                color: role === 'admin' ? '#fff' : '#5e148b',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: '0.3s',
-                            }}
-                        >
-                            Admin
-                        </button>
-
-                        <button
-                            onClick={() => handleToggle('manager')}
-                            style={{
-                                padding: '6px 16px',
-                                border: 'none',
-                                backgroundColor: role === 'manager' ? '#5e148b' : '#fff',
-                                color: role === 'manager' ? '#fff' : '#5e148b',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: '0.3s',
-                            }}
-                        >
-                            Manager
-                        </button>
-
-                        <button
-                            onClick={() => handleToggle('employee')}
-                            style={{
-                                padding: '6px 16px',
-                                border: 'none',
-                                backgroundColor: role === 'employee' ? '#5e148b' : '#fff',
-                                color: role === 'employee' ? '#fff' : '#5e148b',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: '0.3s',
-                            }}
-                        >
-                            Employee
-                        </button>
+                        {["admin", "manager", "employee"].map((r) => (
+                            <button
+                                key={r}
+                                onClick={() => handleToggle(r)}
+                                type="button"
+                                style={{
+                                    padding: "6px 16px",
+                                    border: "none",
+                                    backgroundColor: role === r ? "#5e148b" : "#fff",
+                                    color: role === r ? "#fff" : "#5e148b",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    transition: "0.3s",
+                                }}
+                            >
+                                {r.charAt(0).toUpperCase() + r.slice(1)}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    {/* Conditionally render Mobile Number field */}
                     {role === "employee" && (
                         <div className="mb-3 mt-4">
-                            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
+                            <label
+                                className="form-label fw-semibold"
+                                style={{ textAlign: "left", display: "block" }}
+                            >
                                 Mobile Number :
                             </label>
                             <div className="input-group">
@@ -176,7 +197,10 @@ export default function Login() {
 
                     {/* Email */}
                     <div className="mb-3 mt-4">
-                        <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
+                        <label
+                            className="form-label fw-semibold"
+                            style={{ textAlign: "left", display: "block" }}
+                        >
                             Email Address :
                         </label>
                         <div className="input-group">
@@ -197,7 +221,10 @@ export default function Login() {
 
                     {/* Password */}
                     <div className="mb-3">
-                        <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
+                        <label
+                            className="form-label fw-semibold"
+                            style={{ textAlign: "left", display: "block" }}
+                        >
                             Password :
                         </label>
                         <div className="input-group">
@@ -223,24 +250,31 @@ export default function Login() {
                         </div>
                     </div>
 
-                    {/* Remember Me & Forgot Password */}
-                    <div className="d-flex justify-content-between mb-3">
-                        <div className="form-check">
-                            <input type="checkbox" className="form-check-input" id="rememberMe" />
-                            <label htmlFor="rememberMe" className="form-check-label">
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginTop: "12px",
+                        }}
+                    >
+                        <div className="form-check" style={{ fontSize: "0.95rem" }}>
+                            <input className="form-check-input" type="checkbox" id="rememberMe" />
+                            <label className="form-check-label" htmlFor="rememberMe">
                                 Remember Me
                             </label>
                         </div>
+
                         <Link
                             to="/forgot-password"
-                            className="text-muted small text-decoration-none"
-                            style={{ color: "#5e148b" }}
+                            className="text-decoration-none"
+                            style={{ color: "#5e148b", fontSize: "0.95rem" }}
                         >
                             Forgot Password?
                         </Link>
                     </div>
 
-                    {/* Login Button */}
+                    {/* Submit Button */}
                     <button
                         type="submit"
                         className="btn w-100 login-btn border text-white"
@@ -271,7 +305,8 @@ export default function Login() {
                             backgroundColor: "transparent",
                         }}
                     >
-                        <i className="bi bi-facebook me-1" /> Facebook
+                        <i className="bi bi-facebook me-1" />
+                        Facebook
                     </button>
                     <button
                         className="btn w-50"
@@ -281,17 +316,14 @@ export default function Login() {
                             backgroundColor: "transparent",
                         }}
                     >
-                        <i className="bi bi-google me-1" /> Google
+                        <i className="bi bi-google me-1" />
+                        Google
                     </button>
                 </div>
 
                 <p className="text-center text-muted">
                     Don’t have an account yet?{" "}
-                    <Link
-                        to="/register"
-                        className="register-link text-decoration-none"
-                        style={{ color: "#5e148b" }}
-                    >
+                    <Link to="/register" className="register-link text-decoration-none" style={{ color: "#5e148b" }}>
                         Register
                     </Link>
                 </p>

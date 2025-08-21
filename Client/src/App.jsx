@@ -12,7 +12,7 @@ import Register from './pages/auth/Register';
 import ForgetPassword from './pages/auth/ForgetPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 import EmailSent from './pages/auth/EmailSent';
-import OtpVerification from './pages/auth/OTPVerification';
+// import OtpVerification from './pages/auth/OTPVerification';
 
 // Admin Pages
 import Profile from './pages/admin/Profile';
@@ -21,7 +21,6 @@ import AddDepartment from './pages/admin/AddDepartment';
 import ManageDepartment from './pages/admin/ManageDepartment';
 import AddLeaveType from './pages/admin/AddLeaves';
 import ManageLeaveType from './pages/admin/ManageLeave';
-import AddEmployee from './pages/admin/AddEmployee';
 import ManageEmployee from './pages/admin/ManageEmployee';
 import ManageAllLeave from './pages/admin/ManageAllLeave';
 import LeaveDetails from './pages/admin/LeaveDetails';
@@ -45,6 +44,8 @@ import LogoutPage from './components/Logout';
 
 // CSS
 import './App.css';
+import LoginOTPVerification from './pages/auth/LoginOTPVerification';
+import PasswordOTPVerification from './pages/auth/PasswordOTPVerification';
 
 function App() {
   return (
@@ -53,9 +54,11 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgetPassword />} />
-      <Route path="/EmailSent" element={<EmailSent />} />
-      <Route path="/OTPVerification" element={<OtpVerification />} />
-      <Route path="/ResetPassword" element={<ResetPassword />} />
+      {/* <Route path="/EmailSent" element={<EmailSent />} /> */}
+      {/* <Route path="/OTPVerification" element={<OtpVerification />} /> */}
+      <Route path="/login-otp-verification" element={<LoginOTPVerification />} />
+      {/* <Route path="/password-otp-verification" element={<PasswordOTPVerification />} /> */}
+      {/* <Route path="/ResetPassword" element={<ResetPassword />} />  */}
 
       {/* Admin Protected Routes */}
       <Route path="/admin" element={<AdminLayout />}>
@@ -65,7 +68,6 @@ function App() {
         <Route path="manage-department" element={<ManageDepartment />} />
         <Route path="add-leave-type" element={<AddLeaveType />} />
         <Route path="manage-leave-type" element={<ManageLeaveType />} />
-        <Route path="add-employee" element={<AddEmployee />} />
         <Route path="manage-employee" element={<ManageEmployee />} />
         <Route path="show-all-leave" element={<ManageAllLeave />} />
         <Route path="show-all-leave/:id" element={<LeaveDetails />} />

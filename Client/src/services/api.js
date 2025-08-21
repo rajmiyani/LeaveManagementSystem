@@ -1,33 +1,45 @@
 import axios from "axios";
 
+// Create an Axios instance with base config
 const API = axios.create({
-  baseURL: "http://localhost:8080", // Change to your deployed URL if needed
+  baseURL: "http://localhost:8080",
+  headers: {
+    "Content-Type": "application/json"
+  }
 });
 
-// Auth APIs
-export const loginUser = (data) => API.post("/api/login", data);
+// ----------------------
+// AUTH APIs
+// ----------------------
 
-export const registerUser = (data) => {
-  let endpoint = "/api/register"; // fallback
+// Register a new user (Admin / Manager / Employee)
+export const registerUser = (data) => API.post("/auth/register", data);
 
-  if (data.role === "admin") endpoint = "/api/register-admin";
-  else if (data.role === "manager") endpoint = "/api/register-manager";
-  else if (data.role === "employee") endpoint = "/api/register-employee";
+// Login user based on role
+export const loginUser = (data) => API.post("/auth/login", data);
 
-  return API.post(endpoint, data);
-};
+// Verify OTP (for employee login)
+export const verifyOtp = (data) => API.post("/auth/verify-otp", data);
 
-export const verifyEmployeeOtp = (data) => API.post("/api/verify-employee-otp", data);
-export const forgotPassword = (data) => API.post("/api/forgot-password", data);
-export const resetPassword = (data) => API.post("/api/reset-password", data);
+// Resend OTP
+export const resendOtp = (email) => API.post("/auth/resend-otp", { email });
 
-// Optional: Enable this if backend supports OTP sending via email
-// export const sendOtpToEmail = async (email) => {
-//   try {
-//     const response = await API.post("/api/send-otp", { email });
-//     return response.data;
-//   } catch (error) {
-//     console.error("OTP error:", error);
-//     throw error;
-//   }
-// };
+// Forgot password (sends OTP to email)
+export const forgotPassword = (data) => API.post("/auth/forgot-password", data);
+
+// Reset password using OTP
+export const resetPassword = (data) => API.post("/auth/reset-password", data);
+
+// Optional: Check all roles available with given email
+export const checkEmailRoles = (data) => API.post("/auth/check-email-roles", data);
+
+// Send OTP to email (if needed separately)
+export const sendOtpToEmail = (email) => API.post("/auth/send-otp", { email });
+
+
+
+// ----------------------
+// Admin Panel APIs
+// ----------------------
+
+export const AddDepartment = (data) => API.post("/admin/add-department", data);

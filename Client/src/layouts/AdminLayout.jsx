@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Profile from '../assets/react.svg';
+import Profile from '../assets/AboutUs.webp';
 import LOGO from '../assets/LOGO.png';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {
@@ -24,6 +24,7 @@ import { Outlet } from 'react-router-dom';
 const AdminLayout = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [open, setOpen] = useState(false);
+    const [user, setUser] = useState(null);
     const dropdownRef = useRef();
 
     const toggleSidebar = () => {
@@ -41,6 +42,14 @@ const AdminLayout = () => {
         setDropdowns({ ...dropdowns, [key]: !dropdowns[key] });
     };
 
+    // ✅ Load user info from localStorage (or API)
+    useEffect(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+        }
+    }, []);
+
     // Close dropdown when clicked outside
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -52,6 +61,13 @@ const AdminLayout = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const adminData = JSON.parse(localStorage.getItem("AdminProfileData"));
+
+    const profileImg = adminData?.profile_image
+    ? adminData.profile_image
+    : Profile;
+
+        
     return (
         <>
             <style>{`
@@ -65,7 +81,7 @@ const AdminLayout = () => {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px;
+            padding: 0 00px;
             position: fixed;
             top: 0;
             left: 0;
@@ -145,7 +161,7 @@ const AdminLayout = () => {
             {/* Header */}
             <div className="admin-header">
                 <button
-                    className="btn btn-sm"
+                    className="btn btn-sm ms-3"
                     onClick={toggleSidebar}
                     style={{
                         color: '#5e148b',
@@ -156,17 +172,19 @@ const AdminLayout = () => {
                     <i className="fas fa-bars"></i>
                 </button>
 
-                <div className="d-flex align-items-center gap-3 position-relative" ref={dropdownRef}>
-                    <span className="fw-semibold">Admin Dashboard</span>
+                <div className="d-flex align-items-center gap-3 position-relative me-3" ref={dropdownRef}>
+                    <span className="fw-semibold">
+                        {user?.name} ({user?.role})
+                    </span>
 
-                    {/* Profile Image */}
                     <img
-                        src={Profile}
+                        src={profileImg}
                         alt="user"
                         className="rounded-circle"
                         style={{ width: '40px', height: '40px', cursor: 'pointer' }}
                         onClick={() => setOpen(!open)}
                     />
+
 
                     {/* Dropdown Menu */}
                     {open && (
@@ -196,7 +214,7 @@ const AdminLayout = () => {
                         src={LOGO}
                         alt="Logo"
                         className="img-fluid"
-                        style={{ maxWidth: '120px', height: 'auto' }}
+                        style={{ maxWidth: '100px', height: 'auto' }}
                     />
                 </div> */}
 
@@ -236,24 +254,6 @@ const AdminLayout = () => {
                             </a>
                             <a href="/admin/manage-leave-type" className="d-block py-1">
                                 <FaList className="me-2" /> Manage Leave Type
-                            </a>
-                        </div>
-                    )}
-                </div>
-
-                {/* Employee Dropdown */}
-                <div className="sidebar-dropdown">
-                    <a href="#" onClick={(e) => { e.preventDefault(); toggleDropdown('employee'); }} className="d-flex justify-content-between align-items-center">
-                        <div><FaUsers className="icon me-2 fs-5" /> <span>Employee</span></div>
-                        <FaChevronDown className={`dropdown-arrow ${dropdowns.employee ? 'rotate' : ''}`} />
-                    </a>
-                    {dropdowns.employee && (
-                        <div className="submenu ps-4">
-                            <a href="/admin/add-employee" className="d-block py-1">
-                                <FaUserPlus className="me-2" /> Add Employee
-                            </a>
-                            <a href="/admin/manage-employee" className="d-block py-1">
-                                <FaUserCog className="me-2" /> Manage Employee
                             </a>
                         </div>
                     )}

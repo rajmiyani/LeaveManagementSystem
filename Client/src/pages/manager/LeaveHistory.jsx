@@ -1,204 +1,174 @@
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import React, { useState } from "react";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { CSVLink } from "react-csv";
 
 const LeaveHistory = () => {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [entriesPerPage, setEntriesPerPage] = useState(10);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [isFocused, setIsFocused] = useState(false);
+  const [leaves, setLeaves] = useState([]);
+  const [filteredLeaves, setFilteredLeaves] = useState([]);
+  const [yearFilter, setYearFilter] = useState("");
+  const [monthFilter, setMonthFilter] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState("");
 
-    const leaveData = [
-        {
-            id: 1,
-            leaveType: "Casual Leave",
-            startDate: "2025-07-10",
-            endDate: "2025-07-12",
-            description: "Family function attendance",
-            postingDate: "2025-07-08 10:32:45",
-            adminRemark: "Leave Approved 2025-07-09 09:21:45",
-            status: "Approved",
-        },
-        {
-            id: 2,
-            leaveType: "Medical Leave",
-            startDate: "2025-07-15",
-            endDate: "2025-07-17",
-            description: "Flu and fever",
-            postingDate: "2025-07-14 14:12:30",
-            adminRemark: "Leave Approved 2025-07-15 08:00:00",
-            status: "Approved",
-        },
-        {
-            id: 3,
-            leaveType: "Emergency Leave",
-            startDate: "2025-07-05",
-            endDate: "2025-07-05",
-            description: "Urgent personal work",
-            postingDate: "2025-07-04 18:45:22",
-            adminRemark: "Leave Rejected 2025-07-04 20:00:00",
-            status: "Rejected",
-        },
-    ];
+  const [analytics, setAnalytics] = useState({
+    totalLeaves: 0,
+    totalSick: 0,
+    totalEarned: 0,
+  });
 
-    const filteredData = leaveData.filter((leave) =>
-        leave.leaveType.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  useEffect(() => {
+    const fetchLeaves = async () => {
+      try {
+        const userTokens = localStorage.getItem("userTokens");
+        if (!userTokens) return;
 
-    const indexOfLast = currentPage * entriesPerPage;
-    const indexOfFirst = indexOfLast - entriesPerPage;
-    const currentLeaves = filteredData.slice(indexOfFirst, indexOfLast);
-    const totalPages = Math.ceil(filteredData.length / entriesPerPage);
+        const tokensArray = JSON.parse(userTokens);
+        const managerTokenObj = tokensArray.find(t => t.role === "manager");
+        const token = managerTokenObj?.token;
+        if (!token) return;
 
-    const handlePageChange = (direction) => {
-        if (direction === "prev" && currentPage > 1) {
-            setCurrentPage(currentPage - 1);
-        }
-        if (direction === "next" && currentPage < totalPages) {
-            setCurrentPage(currentPage + 1);
-        }
+        const res = await axios.get("http://localhost:8080/manager/leaveHistory", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        setLeaves(res.data.data || []);
+        setFilteredLeaves(res.data.data || []);
+      } catch (err) {
+        console.error("Error fetching leaves:", err);
+      }
     };
 
-    return (
-        <div>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h4 className="mb-0" style={{ color: "#5e148b", fontWeight: "600" }}>Leave History</h4>
-            </div>
+    fetchLeaves();
+  }, []);
 
-            {/* Breadcrumb */}
-            <nav aria-label="breadcrumb">
-                <ol className="breadcrumb bg-transparent px-0 mb-0">
-                    <li className="breadcrumb-item">
-                        <i className="fas fa-home"></i>
-                        <a href="/admin/dashboard" style={{ color: "#5e148b", textDecoration: "none" }} className="ms-2">Home</a>
-                    </li>
-                    <li className="breadcrumb-item active text-muted" aria-current="page">Leave History</li>
-                </ol>
-            </nav>
+  // Update filtered leaves based on filters
+  useEffect(() => {
+    let temp = [...leaves];
 
-            <div className="card shadow-sm mt-4">
-                <div className="card-body">
-                    <div className="row mb-3 align-items-center justify-content-between">
-                        <div className="col-md-3 col-sm-6 d-flex align-items-center gap-2">
-                            <label className="mb-0 fw-semibold">Show</label>
-                            <select
-                                className="form-select form-select-sm w-auto"
-                                value={entriesPerPage}
-                                onChange={(e) => {
-                                    setEntriesPerPage(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                            >
-                                {[5, 10, 15, 20].map(n => (
-                                    <option key={n} value={n}>{n}</option>
-                                ))}
-                            </select>
-                        </div>
+    if (yearFilter) temp = temp.filter(leave => leave.from_date.startsWith(yearFilter));
+    if (monthFilter) temp = temp.filter(leave => leave.from_date.slice(5,7) === monthFilter);
+    if (employeeFilter) temp = temp.filter(leave => leave.name.toLowerCase().includes(employeeFilter.toLowerCase()));
 
-                        <div className="col-md-4 col-sm-6 text-end">
-                            <div className="position-relative w-100" style={{ maxWidth: "300px" }}>
-                                <input
-                                    type="text"
-                                    className="form-control form-control-sm pe-4 custom-input"
-                                    placeholder="Search records"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onFocus={() => setIsFocused(true)}
-                                    onBlur={() => setIsFocused(false)}
-                                    style={{
-                                        paddingRight: "30px",
-                                        border: isFocused ? "2px solid #5e148b" : "1px solid #ccc",
-                                        boxShadow: "none",
-                                    }}
-                                />
-                                <FontAwesomeIcon
-                                    icon={faMagnifyingGlass}
-                                    className="position-absolute"
-                                    style={{
-                                        top: '50%',
-                                        right: '10px',
-                                        transform: 'translateY(-50%)',
-                                        color: isFocused ? '#5e148b' : '#999',
-                                        pointerEvents: 'none'
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
+    setFilteredLeaves(temp);
 
-                    <div className="table-responsive">
-                        <table className="table table-bordered table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>#</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Leave Type</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Start Date</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>End Date</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Description</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Posting Date</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Admin Remark</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentLeaves.length > 0 ? (
-                                    currentLeaves.map((leave, index) => (
-                                        <tr key={leave.id}>
-                                            <td>{indexOfFirst + index + 1}</td>
-                                            <td>{leave.leaveType}</td>
-                                            <td>{leave.startDate}</td>
-                                            <td>{leave.endDate}</td>
-                                            <td>{leave.description}</td>
-                                            <td>{leave.postingDate}</td>
-                                            <td>{leave.adminRemark}</td>
-                                            <td>
-                                                <span className={`badge ${leave.status === "Approved"
-                                                    ? "bg-success"
-                                                    : leave.status === "Rejected"
-                                                        ? "bg-danger"
-                                                        : "bg-warning text-dark"}`}>
-                                                    {leave.status}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="8" className="text-center">No leave records found.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+    // Update analytics
+    const totalLeaves = temp.length;
+    const totalSick = temp.filter(l => l.leave_type === "Sick Leave").length;
+    const totalEarned = temp.filter(l => l.leave_type === "Earned Leave").length;
 
-                    <div className="d-flex justify-content-between align-items-center mt-3">
-                        <div>
-                            Showing {indexOfFirst + 1} to{" "}
-                            {Math.min(indexOfLast, filteredData.length)} of {filteredData.length} entries
-                        </div>
-                        <div>
-                            <button
-                                className="btn btn-outline-secondary btn-sm me-2"
-                                disabled={currentPage === 1}
-                                onClick={() => handlePageChange("prev")}
-                            >
-                                <FaChevronLeft />
-                            </button>
-                            <span className="fw-bold px-2">{currentPage}</span>
-                            <button
-                                className="btn btn-outline-secondary btn-sm"
-                                disabled={currentPage === totalPages}
-                                onClick={() => handlePageChange("next")}
-                            >
-                                <FaChevronRight />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    setAnalytics({ totalLeaves, totalSick, totalEarned });
+  }, [yearFilter, monthFilter, employeeFilter, leaves]);
+
+  return (
+    <div style={{ marginTop: "-250px" }}>
+      <h4 className="mb-3" style={{ color: "#5e148b", fontWeight: "600" }}>
+        Leave History
+      </h4>
+
+      {/* Filters */}
+      <div className="d-flex gap-3 mb-3 flex-wrap">
+        <input
+          type="text"
+          placeholder="Year (YYYY)"
+          value={yearFilter}
+          onChange={(e) => setYearFilter(e.target.value)}
+          className="form-control"
+          style={{ maxWidth: "150px" }}
+        />
+        <input
+          type="text"
+          placeholder="Month (MM)"
+          value={monthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="form-control"
+          style={{ maxWidth: "150px" }}
+        />
+        <input
+          type="text"
+          placeholder="Employee Name"
+          value={employeeFilter}
+          onChange={(e) => setEmployeeFilter(e.target.value)}
+          className="form-control"
+          style={{ maxWidth: "200px" }}
+        />
+        <CSVLink
+          data={filteredLeaves}
+          filename={"leave_history.csv"}
+          className="btn btn-primary"
+          style={{ backgroundColor: "#5e148b", border: "none" }}
+        >
+          Export CSV
+        </CSVLink>
+      </div>
+
+      {/* Analytics */}
+      <div className="d-flex gap-3 mb-4 flex-wrap">
+        <div className="card text-center p-3 flex-fill" style={{ backgroundColor: "#f5f5f5" }}>
+          <h6>Total Leaves</h6>
+          <h4 style={{ color: "#5e148b" }}>{analytics.totalLeaves}</h4>
         </div>
-    );
+        <div className="card text-center p-3 flex-fill" style={{ backgroundColor: "#f5f5f5" }}>
+          <h6>Total Sick Leave</h6>
+          <h4 style={{ color: "#5e148b" }}>{analytics.totalSick}</h4>
+        </div>
+        <div className="card text-center p-3 flex-fill" style={{ backgroundColor: "#f5f5f5" }}>
+          <h6>Total Earned Leave</h6>
+          <h4 style={{ color: "#5e148b" }}>{analytics.totalEarned}</h4>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="table-responsive">
+        <table className="table table-bordered table-striped text-center">
+          <thead className="table-dark">
+            <tr>
+              <th style={{ backgroundColor: "#5e148b" }}>#</th>
+              <th style={{ backgroundColor: "#5e148b" }}>Employee</th>
+              <th style={{ backgroundColor: "#5e148b" }}>Leave Type</th>
+              <th style={{ backgroundColor: "#5e148b" }}>From</th>
+              <th style={{ backgroundColor: "#5e148b" }}>To</th>
+              <th style={{ backgroundColor: "#5e148b" }}>Reason</th>
+              <th style={{ backgroundColor: "#5e148b" }}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredLeaves.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="text-center text-muted">
+                  No leave records found.
+                </td>
+              </tr>
+            ) : (
+              filteredLeaves.map((leave, index) => (
+                <tr key={leave.id}>
+                  <td>{index + 1}</td>
+                  <td>{leave.name}</td>
+                  <td>{leave.leave_type}</td>
+                  <td>{leave.from_date}</td>
+                  <td>{leave.to_date}</td>
+                  <td>{leave.description}</td>
+                  <td>
+                    <span
+                      className={`badge ${
+                        leave.status === "Approved"
+                          ? "bg-success"
+                          : leave.status === "Rejected"
+                          ? "bg-danger"
+                          : "bg-warning text-dark"
+                      }`}
+                    >
+                      {leave.status || "Pending"}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 };
 
 export default LeaveHistory;

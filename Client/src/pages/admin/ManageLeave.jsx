@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import { Modal, Button, Form } from "react-bootstrap";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ManageLeaveType = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -10,17 +11,21 @@ const ManageLeaveType = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [isFocused, setIsFocused] = useState(false);
 
-    const [leaveTypes, setLeaveTypes] = useState([
-        { id: 1, type: "Sick Leave", addedBy: "Admin" },
-        { id: 2, type: "Casual Leave", addedBy: "HR" },
-    ]);
+    const [leaveTypes, setLeaveTypes] = useState([]);
 
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [selectedLeave, setSelectedLeave] = useState(null);
+    // Fetch leave types from API
+    useEffect(() => {
+        fetch("http://localhost:8080/admin/leavetype")
+            .then(res => res.json())
+            .then(data => {
+                setLeaveTypes(data);
+            })
+            .catch(() => toast.error("Failed to fetch leave types"));
+    }, []);
 
     const filteredData = leaveTypes.filter((leave) =>
-        leave.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        leave.addedBy.toLowerCase().includes(searchTerm.toLowerCase())
+        leave.leaveType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        leave.addedBy?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const indexOfLast = currentPage * entriesPerPage;
@@ -33,27 +38,8 @@ const ManageLeaveType = () => {
         if (direction === "next" && currentPage < totalPages) setCurrentPage(currentPage + 1);
     };
 
-    const handleEditClick = (leave) => {
-        setSelectedLeave(leave);
-        setShowEditModal(true);
-    };
-
-    const handleDeleteClick = (id) => {
-        if (window.confirm("Are you sure you want to delete this leave type?")) {
-            const updated = leaveTypes.filter(l => l.id !== id);
-            setLeaveTypes(updated);
-        }
-    };
-
-    const handleSaveChanges = () => {
-        setLeaveTypes(prev =>
-            prev.map(l => l.id === selectedLeave.id ? selectedLeave : l)
-        );
-        setShowEditModal(false);
-    };
-
     return (
-        <div style={{marginTop:"-50px"}}>
+        <div style={{ marginTop: "50px" }}>
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h4 className="mb-0" style={{ color: "#5e148b", fontWeight: "600" }}>Manage Leave Type</h4>
             </div>
@@ -73,6 +59,7 @@ const ManageLeaveType = () => {
                 <div className="card-body">
                     <h6 className="fw-semibold mb-3 mt-0" style={{ textAlign: "left" }}>LEAVE TYPE INFO</h6>
 
+                    {/* Filters */}
                     <div className="row mb-3 align-items-center justify-content-between">
                         <div className="col-md-3 col-sm-6 d-flex align-items-center gap-2">
                             <label className="mb-0 fw-semibold">Show</label>
@@ -121,6 +108,7 @@ const ManageLeaveType = () => {
                         </div>
                     </div>
 
+                    {/* Table */}
                     <div className="table-responsive">
                         <table className="table table-bordered table-sm align-middle">
                             <thead>
@@ -128,7 +116,7 @@ const ManageLeaveType = () => {
                                     <th style={{ backgroundColor: "#5e148b", color: "white" }}>Sr no</th>
                                     <th style={{ backgroundColor: "#5e148b", color: "white" }}>Leave Type</th>
                                     <th style={{ backgroundColor: "#5e148b", color: "white" }}>Added By</th>
-                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Action</th>
+                                    <th style={{ backgroundColor: "#5e148b", color: "white" }}>Purpose</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -136,22 +124,9 @@ const ManageLeaveType = () => {
                                     currentLeaves.map((leave, index) => (
                                         <tr key={leave.id}>
                                             <td>{indexOfFirst + index + 1}</td>
-                                            <td>{leave.type}</td>
+                                            <td>{leave.leaveType}</td>
                                             <td>{leave.addedBy}</td>
-                                            <td>
-                                                <FaEdit
-                                                    className="text-primary me-2"
-                                                    title="Edit"
-                                                    onClick={() => handleEditClick(leave)}
-                                                    style={{ cursor: "pointer" }}
-                                                />
-                                                <FaTrash
-                                                    className="text-danger"
-                                                    title="Delete"
-                                                    onClick={() => handleDeleteClick(leave.id)}
-                                                    style={{ cursor: "pointer" }}
-                                                />
-                                            </td>
+                                            <td>{leave.description}</td>
                                         </tr>
                                     ))
                                 ) : (
@@ -163,6 +138,7 @@ const ManageLeaveType = () => {
                         </table>
                     </div>
 
+                    {/* Pagination */}
                     <div className="d-flex justify-content-between align-items-center mt-2">
                         <div>
                             Showing {indexOfFirst + 1} to{" "}
@@ -188,41 +164,6 @@ const ManageLeaveType = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Edit Leave Type Modal */}
-            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Edit Leave Type</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Leave Type</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={selectedLeave?.type || ''}
-                                onChange={(e) => setSelectedLeave({ ...selectedLeave, type: e.target.value })}
-                            />
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Added By</Form.Label>
-                            <Form.Control
-                                type="text"
-                                value={selectedLeave?.addedBy || ''}
-                                onChange={(e) => setSelectedLeave({ ...selectedLeave, addedBy: e.target.value })}
-                            />
-                        </Form.Group>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-                        Cancel
-                    </Button>
-                    <Button style={{ backgroundColor: "#5e148b" }} className="border-0" onClick={handleSaveChanges}>
-                        Save Changes
-                    </Button>
-                </Modal.Footer>
-            </Modal>
         </div>
     );
 };

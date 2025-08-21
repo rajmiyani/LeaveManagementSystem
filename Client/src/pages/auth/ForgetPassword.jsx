@@ -1,19 +1,49 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // ✅ Import useNavigate
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { forgotPassword, checkEmailRoles } from "../../services/api"; // 👈 Make sure `checkEmailRoles` is added
 
 export default function ForgetPassword() {
     const [email, setEmail] = useState("");
-    const navigate = useNavigate(); // ✅ Initialize navigator
+    const [mobile, setMobile] = useState("");
+    const [needMobile, setNeedMobile] = useState(false);
+    const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleEmailBlur = async () => {
+        if (!email) return;
+        try {
+            const res = await checkEmailRoles({ email });
+            setNeedMobile(res.data.count > 1); 
+        } catch (error) {
+            console.error("Error checking email roles:", error);
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!email) return alert("Please enter your email address");
+        if (!email || (needMobile && !mobile)) {
+            alert("Please enter all required fields.");
+            return;
+        }
 
-        // Optionally, call an API here...
+        try {
+            const res = await forgotPassword({ email, mobile_no: mobile });
 
-        // ✅ Navigate to EmailSent page
-        navigate("/EmailSent");
+            if (res.data.status) {
+                alert("OTP sent to your email.");
+                navigate("/EmailSent", {
+                    state: {
+                        email: res.data.email,
+                        role: res.data.role,
+                        purpose: "reset-password"
+                    },
+                });
+            } else {
+                alert(res.data.message || "Something went wrong.");
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || "Request failed.");
+        }
     };
 
     return (
@@ -52,45 +82,49 @@ export default function ForgetPassword() {
             >
                 <h5 className="text-center fw-bold">Forgot Password</h5>
                 <p className="text-center text-muted mb-4">
-                    Enter your email address and we’ll send you a link to reset your password
+                    Enter your email {needMobile ? "and mobile number" : ""} to receive OTP.
                 </p>
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label
-                            className="form-label fw-semibold"
-                            style={{ textAlign: "left", display: "block" }}
-                        >
-                            Email Address :
-                        </label>
+                        <label className="form-label fw-semibold">Email Address :</label>
                         <input
                             type="email"
-                            name="email"
                             className="form-control"
                             placeholder="Enter your registered email"
-                            required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            onBlur={handleEmailBlur}
+                            required
                         />
                     </div>
+
+                    {needMobile && (
+                        <div className="mb-4">
+                            <label className="form-label fw-semibold">Mobile Number :</label>
+                            <input
+                                type="tel"
+                                className="form-control"
+                                placeholder="Enter your registered mobile number"
+                                value={mobile}
+                                onChange={(e) => setMobile(e.target.value)}
+                                required
+                            />
+                        </div>
+                    )}
 
                     <button
                         type="submit"
                         className="btn w-100 login-btn border text-white"
                         style={{
                             backgroundColor: "#5e148b",
-                            color: "#fff",
                             fontWeight: "bold",
-                            width: "100%",
-                            marginTop: "2rem",
                             padding: "12px",
-                            border: "none",
                             borderRadius: "8px",
                             fontSize: "16px",
-                            cursor: "pointer",
                         }}
                     >
-                        Send Reset Link
+                        Send OTP
                     </button>
                 </form>
 

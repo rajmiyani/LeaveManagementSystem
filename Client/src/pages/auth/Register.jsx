@@ -1,6 +1,6 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "../../services/api"; // Your API function
+import { registerUser } from "../../services/api"; // Axios API helper
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -20,9 +20,7 @@ export default function Register() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const togglePassword = () => {
-    setShowPassword((prev) => !prev);
-  };
+  const togglePassword = () => setShowPassword((prev) => !prev);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,32 +29,45 @@ export default function Register() {
       toast.error("Passwords do not match");
       return;
     }
+    if (selectedRole === "employee" && !form.mobile) {
+      toast.error("Mobile is required for employee registration");
+      return;
+    }
+
+    // Build the payload: Only include mobile if employee
+    const payload = {
+      name: form.name,
+      email: form.email,
+      password: form.password,
+      role: selectedRole,
+    };
+    if (selectedRole === "employee") payload.mobile = form.mobile;
 
     try {
-      const payload = {
-        name: form.name,
-        email: form.email,
-        mobile: form.mobile,
-        password: form.password,
-        role: selectedRole,
-      };
+      await registerUser(payload);
+      toast.success(`${selectedRole} registered successfully!`);
 
-      const res = await registerUser(payload);
+      setForm({
+        name: "",
+        email: "",
+        mobile: "",
+        password: "",
+        confirmPassword: "",
+      });
 
-      if (res.status) {
-        toast.success(res.message || "Registered successfully!");
-
-        // Delay navigation slightly, so user sees toast
-        setTimeout(() => {
-          if (selectedRole === "admin") navigate("/admin/dashboard");
-          else if (selectedRole === "manager") navigate("/manager/dashboard");
-          else navigate("/employee/dashboard");
-        }, 1500);
-      } else {
-        toast.error(res.message || "Registration failed");
-      }
+      setTimeout(() => {
+        if (selectedRole === "admin") navigate("/admin/dashboard");
+        else if (selectedRole === "manager") navigate("/manager/dashboard");
+        else navigate("/employee/dashboard");
+      }, 1000);
     } catch (err) {
-      toast.error(err.message || "Registration failed");
+      if (err.response?.data?.messages) {
+        Object.values(err.response.data.messages).forEach((msg) => toast.error(msg));
+      } else if (typeof err.response?.data?.message === "string") {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error("Registration failed.");
+      }
     }
   };
 
@@ -74,7 +85,6 @@ export default function Register() {
         fontFamily: "'Segoe UI', sans-serif",
       }}
     >
-      {/* Toastify Container */}
       <ToastContainer position="top-right" autoClose={3000} />
 
       <h1
@@ -102,41 +112,32 @@ export default function Register() {
           Please enter your details to register
         </p>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            marginBottom: "20px",
-          }}
-        >
-          <label
-            style={{ fontWeight: "bold", fontSize: "18px", color: "#1a1a3d" }}
-          >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <label style={{ fontWeight: 'bold', fontSize: '18px', color: '#1a1a3d' }}>
             Register as
           </label>
 
           <div
             style={{
-              display: "flex",
-              border: "1px solid #ccc",
-              borderRadius: "6px",
-              overflow: "hidden",
+              display: 'flex',
+              border: '1px solid #ccc',
+              borderRadius: '6px',
+              overflow: 'hidden',
             }}
           >
-            {["admin", "manager", "employee"].map((role) => (
+            {['admin', 'manager', 'employee'].map((role) => (
               <button
-                type="button"
                 key={role}
                 onClick={() => setSelectedRole(role)}
+                type="button"
                 style={{
-                  padding: "6px 16px",
-                  border: "none",
-                  backgroundColor: selectedRole === role ? "#5e148b" : "#fff",
-                  color: selectedRole === role ? "#fff" : "#5e148b",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "0.3s",
+                  padding: '6px 16px',
+                  border: 'none',
+                  backgroundColor: selectedRole === role ? '#5e148b' : '#fff',
+                  color: selectedRole === role ? '#fff' : '#5e148b',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: '0.3s',
                 }}
               >
                 {role.charAt(0).toUpperCase() + role.slice(1)}
@@ -147,12 +148,7 @@ export default function Register() {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold"
-              style={{ textAlign: "left", display: "block" }}
-            >
-              Full Name :
-            </label>
+            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>Full Name :</label>
             <input
               type="text"
               name="name"
@@ -165,12 +161,7 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold"
-              style={{ textAlign: "left", display: "block" }}
-            >
-              Email Address :
-            </label>
+            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>Email Address :</label>
             <input
               type="email"
               name="email"
@@ -183,10 +174,7 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold"
-              style={{ textAlign: "left", display: "block" }}
-            >
+            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>
               Mobile Number :
             </label>
             <input
@@ -194,18 +182,15 @@ export default function Register() {
               name="mobile"
               className="form-control"
               placeholder="Enter mobile number"
+              required={selectedRole === "employee"}
               value={form.mobile}
               onChange={handleChange}
+              disabled={selectedRole !== "employee"}
             />
           </div>
 
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold"
-              style={{ textAlign: "left", display: "block" }}
-            >
-              Password :
-            </label>
+            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>Password :</label>
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -218,12 +203,7 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label
-              className="form-label fw-semibold"
-              style={{ textAlign: "left", display: "block" }}
-            >
-              Confirm Password :
-            </label>
+            <label className="form-label fw-semibold" style={{ textAlign: "left", display: "block" }}>Confirm Password :</label>
             <input
               type={showPassword ? "text" : "password"}
               name="confirmPassword"
@@ -243,10 +223,11 @@ export default function Register() {
               }}
               onClick={togglePassword}
             >
-              <i className={`bi ${showPassword ? "bi-eye" : "bi-eye-slash"}`}></i>{" "}
-              Show Password
+              <i className={`bi ${showPassword ? "bi-eye" : "bi-eye-slash"}`}></i> Show Password
             </div>
           </div>
+
+          
 
           <button
             type="submit"
@@ -270,11 +251,7 @@ export default function Register() {
 
         <p className="text-center text-muted mt-4">
           Already have an account?{" "}
-          <Link
-            to="/"
-            className="text-decoration-none"
-            style={{ color: "#5e148b" }}
-          >
+          <Link to="/" className="text-decoration-none" style={{ color: "#5e148b" }}>
             Login
           </Link>
         </p>

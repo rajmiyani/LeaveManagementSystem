@@ -8,6 +8,7 @@ import { Outlet } from 'react-router-dom';
 const managerLayout = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [open, setOpen] = useState(false);
+    const [user, setUser] = useState(false);
     const dropdownRef = useRef();
 
     const toggleSidebar = () => {
@@ -35,6 +36,19 @@ const managerLayout = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+            setUser(JSON.parse(savedUser));
+        }
+    }, []);
+
+    const managerData = JSON.parse(localStorage.getItem("MangerProfileData"));
+
+    const profileImg = managerData?.profile_image
+        ? managerData.profile_image
+        : Profile;
 
     return (
         <>
@@ -141,11 +155,12 @@ const managerLayout = () => {
                 </button>
 
                 <div className="d-flex align-items-center gap-3 position-relative" ref={dropdownRef}>
-                    <span className="fw-semibold">manager Dashboard</span>
+                    <span className="fw-semibold">
+                        {user?.name} ({user?.role})
+                    </span>
 
-                    {/* Profile Image */}
                     <img
-                        src={Profile}
+                        src={profileImg}
                         alt="user"
                         className="rounded-circle"
                         style={{ width: '40px', height: '40px', cursor: 'pointer' }}
